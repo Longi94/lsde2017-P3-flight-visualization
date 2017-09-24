@@ -1,38 +1,45 @@
 package in.dragonbra;
 
 import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Encoders;
+import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
-
-import java.util.ArrayList;
-import java.util.List;
+import org.opensky.libadsb.Decoder;
+import org.opensky.libadsb.msgs.ModeSReply;
 
 public class FlightVisualizer {
     public static void main(String[] args) {
-        SparkSession spark = SparkSession
-                .builder()
-                .appName("JavaSparkPi")
-                .config("spark.master", "local")
-                .getOrCreate();
 
-        JavaSparkContext jsc = new JavaSparkContext(spark.sparkContext());
-
-        int slices = (args.length == 1) ? Integer.parseInt(args[0]) : 2;
-        int n = 100000 * slices;
-        List<Integer> l = new ArrayList<>(n);
-        for (int i = 0; i < n; i++) {
-            l.add(i);
+        if (args.length == 0) {
+            System.out.println("Usage: [input avro file]");
+            System.exit(1);
         }
 
-        JavaRDD<Integer> dataSet = jsc.parallelize(l, slices);
+        SparkSession spark = SparkSession
+                .builder()
+                .appName("group06")
+                .master("local")
+                .getOrCreate();
 
-        int count = dataSet.map(integer -> {
-            double x = Math.random() * 2 - 1;
-            double y = Math.random() * 2 - 1;
-            return (x * x + y * y <= 1) ? 1 : 0;
-        }).reduce((integer, integer2) -> integer + integer2);
+        // Creates a DataFrame from a specified file
+        Dataset<Row> df = spark.read().format("com.databricks.spark.avro").load(args[0]);
 
-        System.out.println("Pi is roughly " + 4.0 * count / n);
+        JavaRDD<ModeSReply> messages = df.sort("timeAtServer")
+                .select("timeAtServer", "rawMessage")
+                .map(value -> {
+                    try {
+                        return Decoder.genericDecoder(value.getString(1));
+                    } catch (Exception ignored) {
+                    }
+                    return null;
+                }, Encoders.kryo(ModeSReply.class))
+                .filter(p -> p != null
+                        && (p.getType() == ModeSReply.subtype.ADSB_AIRBORN_POSITION
+                        || p.getType() == ModeSReply.subtype.ADSB_SURFACE_POSITION))
+                .javaRDD();
+
+        messages.saveAsTextFile("sample-out");
 
         spark.stop();
     }

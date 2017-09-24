@@ -68,6 +68,7 @@ gradle-app.setting
 /out/
 .idea/
 *.iml
+*.ipr
 
 # mpeltonen/sbt-idea plugin
 .idea_modules/
@@ -82,3 +83,4 @@ crashlytics-build.properties
 fabric.properties
 
 /sample-data/
+/sample-out/
