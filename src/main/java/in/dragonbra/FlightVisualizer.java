@@ -2,6 +2,8 @@ package in.dragonbra;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.function.FilterFunction;
+import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
@@ -11,9 +13,9 @@ import org.opensky.libadsb.msgs.ModeSReply;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class FlightVisualizer {
 
@@ -27,7 +29,11 @@ public class FlightVisualizer {
         }
 
         Collection<File> files = FileUtils.listFiles(new File(args[0]), new String[]{"avro"}, true);
-        List<String> paths = files.stream().map(File::getAbsolutePath).collect(Collectors.toList());
+
+        List<String> paths = new ArrayList<>();
+        for (File file : files) {
+            paths.add(file.getAbsolutePath());
+        }
 
         FileUtils.deleteDirectory(new File(OUTPUT_PATH));
 
@@ -43,16 +49,24 @@ public class FlightVisualizer {
 
         JavaRDD<ModeSReply> messages = df.sort("timeAtServer")
                 .select("timeAtServer", "rawMessage")
-                .map(value -> {
-                    try {
-                        return Decoder.genericDecoder(value.getString(1));
-                    } catch (Exception ignored) {
+                .map(new MapFunction<Row, ModeSReply>() {
+                    @Override
+                    public ModeSReply call(Row value) throws Exception {
+                        try {
+                            return Decoder.genericDecoder(value.getString(1));
+                        } catch (Exception ignored) {
+                        }
+                        return null;
                     }
-                    return null;
                 }, Encoders.kryo(ModeSReply.class))
-                .filter(p -> p != null
-                        && (p.getType() == ModeSReply.subtype.ADSB_AIRBORN_POSITION
-                        || p.getType() == ModeSReply.subtype.ADSB_SURFACE_POSITION))
+                .filter(new FilterFunction<ModeSReply>() {
+                    @Override
+                    public boolean call(ModeSReply p) throws Exception {
+                        return p != null
+                                && (p.getType() == ModeSReply.subtype.ADSB_AIRBORN_POSITION
+                                || p.getType() == ModeSReply.subtype.ADSB_SURFACE_POSITION);
+                    }
+                })
                 .javaRDD();
 
         messages.saveAsTextFile(OUTPUT_PATH);

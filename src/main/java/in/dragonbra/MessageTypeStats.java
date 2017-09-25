@@ -2,6 +2,7 @@ package in.dragonbra;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
@@ -10,10 +11,10 @@ import org.opensky.libadsb.Decoder;
 import org.opensky.libadsb.msgs.ModeSReply;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class MessageTypeStats {
 
@@ -27,7 +28,11 @@ public class MessageTypeStats {
         long start = System.currentTimeMillis();
 
         Collection<File> files = FileUtils.listFiles(new File(args[0]), new String[]{"avro"}, true);
-        List<String> paths = files.stream().map(File::getAbsolutePath).collect(Collectors.toList());
+
+        List<String> paths = new ArrayList<>();
+        for (File file : files) {
+            paths.add(file.getAbsolutePath());
+        }
 
         SparkSession spark = SparkSession
                 .builder()
@@ -40,12 +45,15 @@ public class MessageTypeStats {
                 .load(paths.toArray(new String[paths.size()]));
 
         JavaRDD<ModeSReply.subtype> types = df.select("rawMessage")
-                .map(value -> {
-                    try {
-                        return Decoder.genericDecoder(value.getString(0)).getType();
-                    } catch (Exception ignored) {
+                .map(new MapFunction<Row, ModeSReply.subtype>() {
+                    @Override
+                    public ModeSReply.subtype call(Row value) throws Exception {
+                        try {
+                            return Decoder.genericDecoder(value.getString(0)).getType();
+                        } catch (Exception ignored) {
+                        }
+                        return ModeSReply.subtype.MODES_REPLY;
                     }
-                    return ModeSReply.subtype.MODES_REPLY;
                 }, Encoders.kryo(ModeSReply.subtype.class))
                 .javaRDD();
 
