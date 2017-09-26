@@ -1,6 +1,7 @@
 package in.dragonbra;
 
-import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
+import org.apache.parquet.Strings;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.sql.Dataset;
@@ -11,12 +12,11 @@ import org.opensky.libadsb.Decoder;
 import org.opensky.libadsb.msgs.ModeSReply;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 public class MessageTypeStats {
+
+    public static final Logger logger = Logger.getLogger(MessageTypeStats.class);
 
     public static void main(String[] args) throws IOException {
 
@@ -25,24 +25,19 @@ public class MessageTypeStats {
             System.exit(1);
         }
 
+        logger.info("Arguments = " + Strings.join(args, " "));
+        logger.info("Working Directory = " + System.getProperty("user.dir"));
+
         long start = System.currentTimeMillis();
 
-        Collection<File> files = FileUtils.listFiles(new File(args[0]), new String[]{"avro"}, true);
-
-        List<String> paths = new ArrayList<>();
-        for (File file : files) {
-            paths.add(file.getAbsolutePath());
-        }
-
+        String[] paths = args[0].split(",");
         SparkSession spark = SparkSession
                 .builder()
-                .appName("group06")
-                .master("local")
+                .appName(MessageTypeStats.class.getSimpleName())
                 .getOrCreate();
 
         // Creates a DataFrame from a specified file
-        Dataset<Row> df = spark.read().format("com.databricks.spark.avro")
-                .load(paths.toArray(new String[paths.size()]));
+        Dataset<Row> df = spark.read().format("com.databricks.spark.avro").load(paths);
 
         JavaRDD<ModeSReply.subtype> types = df.select("rawMessage")
                 .map(new MapFunction<Row, ModeSReply.subtype>() {
