@@ -4,7 +4,6 @@ import com.google.common.collect.Lists;
 import in.dragonbra.model.PlanePosition;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math3.util.FastMath;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
@@ -114,7 +113,7 @@ public class RDPReducer {
         System.out.println("Finished in " + (System.currentTimeMillis() - start) + " milliseconds.");
     }
 
-    private static List<PlanePosition> DouglasPeucker(List<PlanePosition> positions, double epsilon) {
+    public static List<PlanePosition> DouglasPeucker(List<PlanePosition> positions, double epsilon) {
         // Find the point with the maximum distance
         double dmax = 0;
         int index = 0;
@@ -148,15 +147,9 @@ public class RDPReducer {
         return result;
     }
 
-    private static double distanceFromLine(Vector3D P, Vector3D L1, Vector3D L2) {
-        /*return abs((L1.getY() - L2.getY()) * P.getX() -
-                (L1.getX() - L2.getX()) * P.getY() +
-                L2.getX() * L1.getY() -
-                L1.getX() * L2.getY())
-                / sqrt(pow(L1.getY() - L2.getY(), 2.0) +
-                pow(L1.getX() - L2.getX(), 2.0));*/
-
-        return FastMath.pow(abs(L2.subtract(L1).crossProduct(L1.subtract(P))), 2) / abs(L2.subtract(L1));
+    public static double distanceFromLine(Vector3D P, Vector3D L1, Vector3D L2) {
+        return abs(P.subtract(L1).crossProduct(P.subtract(L2))) /
+                abs(L2.subtract(L1));
     }
 
     private static double abs(Vector3D v) {
