@@ -84,3 +84,5 @@ fabric.properties
 
 /sample-data/
 /sample-out/
+/positions/
+/reduced-positions/

@@ -1,7 +1,6 @@
 package in.dragonbra;
 
 import in.dragonbra.model.Message;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.FilterFunction;
@@ -27,7 +26,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.opensky.libadsb.tools.*;
+import static org.opensky.libadsb.tools.toHexString;
 
 public class PositionExtractor {
 
@@ -40,11 +39,14 @@ public class PositionExtractor {
             System.exit(1);
         }
 
+        if (new File(OUTPUT_PATH).exists()) {
+            System.out.println(OUTPUT_PATH + " already exists.");
+            System.exit(1);
+        }
+
         long start = System.currentTimeMillis();
 
         String[] paths = args[0].split(",");
-
-        FileUtils.deleteDirectory(new File(OUTPUT_PATH));
 
         SparkSession spark = SparkSession
                 .builder()
@@ -151,18 +153,22 @@ public class PositionExtractor {
                     break;
             }
 
-            if (pos != null && pos.isReasonable()) {
+            if (pos != null && pos.isReasonable() &&
+                    pos.getAltitude() != null && // apparently this is a thing that can happen
+                    pos.getLongitude() != null &&
+                    pos.getLatitude() != null) {
                 // Saving as a csv format for now
-                positions.add(StringUtils.join(new Object[]{
+                String joined = StringUtils.join(new Object[]{
                                 icao24,
                                 isAirborne,
                                 message.getTimeStamp(),
-                                pos.getLatitude(),
                                 pos.getLongitude(),
+                                pos.getLatitude(),
                                 pos.getAltitude()
                         },
                         ','
-                ));
+                );
+                positions.add(joined);
             }
         }
 

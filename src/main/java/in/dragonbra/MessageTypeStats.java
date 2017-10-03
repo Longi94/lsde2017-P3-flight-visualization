@@ -54,12 +54,8 @@ public class MessageTypeStats {
 
         Map<ModeSReply.subtype, Long> typeCount = types.countByValue();
 
-        try (Writer writer = new BufferedWriter(new OutputStreamWriter(
-                new FileOutputStream(args[1]), "utf-8"))) {
-            for (Map.Entry<ModeSReply.subtype, Long> entry : typeCount.entrySet()) {
-                writer.write(entry.getKey().toString() + "," + entry.getValue().toString());
-                writer.write('\n');
-            }
+        for (Map.Entry<ModeSReply.subtype, Long> entry : typeCount.entrySet()) {
+            System.out.println(entry.getKey().toString() + "," + entry.getValue().toString());
         }
 
         spark.stop();
