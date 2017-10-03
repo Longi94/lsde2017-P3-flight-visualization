@@ -119,7 +119,7 @@ public class RDPReducer {
         int index = 0;
         int end = positions.size() - 1;
 
-        for (int i = 1; i < end - 1; i++) {
+        for (int i = 1; i < end; i++) {
             double d = distanceFromLine(positions.get(i).getPos(), positions.get(0).getPos(), positions.get(end).getPos());
             if (d > dmax) {
                 index = i;
@@ -133,7 +133,7 @@ public class RDPReducer {
         if (dmax > epsilon) {
             // Recursive call
             List<PlanePosition> recResults1 = DouglasPeucker(positions.subList(0, index + 1), epsilon);
-            List<PlanePosition> recResults2 = DouglasPeucker(positions.subList(index, end), epsilon);
+            List<PlanePosition> recResults2 = DouglasPeucker(positions.subList(index, end + 1), epsilon);
 
             // Build the result list
             recResults1.remove(recResults1.size() - 1);
