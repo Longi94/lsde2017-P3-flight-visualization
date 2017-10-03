@@ -53,6 +53,7 @@ public class RDPReducer {
         // Creates a DataFrame from a specified file
         Dataset<Row> df = spark.read().csv(INPUT_PATH);
 
+        // map the csv to java objects
         JavaRDD<PlanePosition> positions = df.map(new MapFunction<Row, PlanePosition>() {
             @Override
             public PlanePosition call(Row row) throws Exception {
@@ -73,18 +74,23 @@ public class RDPReducer {
         }, Encoders.kryo(PlanePosition.class)).javaRDD();
 
         JavaRDD<String> reducedPositions = positions
+                // group the positions by icao24
                 .groupBy(new Function<PlanePosition, String>() {
                     @Override
                     public String call(PlanePosition position) throws Exception {
                         return position.getIcao24();
                     }
                 })
+
+                // apply the Ramer-Douglas-Peucker algorithm
                 .mapValues(new Function<Iterable<PlanePosition>, List<PlanePosition>>() {
                     @Override
                     public List<PlanePosition> call(Iterable<PlanePosition> positionsIter) throws Exception {
                         return DouglasPeucker(Lists.newArrayList(positionsIter), epsilon);
                     }
                 })
+
+                // map back to csv
                 .flatMap(new FlatMapFunction<Tuple2<String, List<PlanePosition>>, String>() {
                     @Override
                     public Iterator<String> call(Tuple2<String, List<PlanePosition>> t) throws Exception {
@@ -136,7 +142,7 @@ public class RDPReducer {
             List<PlanePosition> recResults2 = DouglasPeucker(positions.subList(index, end + 1), epsilon);
 
             // Build the result list
-            recResults1.remove(recResults1.size() - 1);
+            recResults1.remove(recResults1.size() - 1); // this is a duplicate
             result.addAll(recResults1);
             result.addAll(recResults2);
         } else {
@@ -148,11 +154,13 @@ public class RDPReducer {
     }
 
     public static double distanceFromLine(Vector3D P, Vector3D L1, Vector3D L2) {
+        // based on http://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
         return abs(P.subtract(L1).crossProduct(P.subtract(L2))) /
                 abs(L2.subtract(L1));
     }
 
     private static double abs(Vector3D v) {
+        // why is there no abs method in Vector3D smh
         return v.distance(Vector3D.ZERO);
     }
 }
