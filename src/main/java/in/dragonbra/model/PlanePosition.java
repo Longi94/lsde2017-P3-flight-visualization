@@ -40,4 +40,15 @@ public class PlanePosition implements Serializable {
     public boolean isAirborne() {
         return isAirborne;
     }
+
+    @Override
+    public String toString() {
+        return icao24 + "," +
+                (isAirborne ? "1" : "0") + "," +
+                timestamp + "," +
+                pos.getX() + "," +
+                pos.getY() + "," +
+                pos.getZ();
+
+    }
 }

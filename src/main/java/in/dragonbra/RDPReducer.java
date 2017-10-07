@@ -2,14 +2,12 @@ package in.dragonbra;
 
 import com.google.common.collect.Lists;
 import in.dragonbra.model.PlanePosition;
-import org.apache.commons.lang3.StringUtils;
+import in.dragonbra.util.SparkUtils;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import scala.Tuple2;
@@ -54,24 +52,7 @@ public class RDPReducer {
         Dataset<Row> df = spark.read().csv(INPUT_PATH);
 
         // map the csv to java objects
-        JavaRDD<PlanePosition> positions = df.map(new MapFunction<Row, PlanePosition>() {
-            @Override
-            public PlanePosition call(Row row) throws Exception {
-                String x = row.getString(3);
-                String y = row.getString(4);
-                String z = row.getString(5);
-                String timestamp = row.getString(2);
-                String isAirborne = row.getString(1);
-                String icao24 = row.getString(0);
-                //System.out.println(icao24 + " " + timestamp);
-                return new PlanePosition(
-                        new Vector3D(Double.parseDouble(x), Double.parseDouble(y), Double.parseDouble(z)),
-                        Double.parseDouble(timestamp),
-                        icao24,
-                        "1".equals(isAirborne)
-                );
-            }
-        }, Encoders.kryo(PlanePosition.class)).javaRDD();
+        JavaRDD<PlanePosition> positions = SparkUtils.readCsv(df);
 
         JavaRDD<String> reducedPositions = positions
                 // group the positions by icao24
@@ -97,17 +78,9 @@ public class RDPReducer {
                         List<String> positions = new LinkedList<>();
 
                         for (PlanePosition position : t._2) {
-                            positions.add(StringUtils.join(new Object[]{
-                                            t._1,
-                                            position.isAirborne() ? "1" : "0",
-                                            position.getTimestamp(),
-                                            position.getPos().getX(),
-                                            position.getPos().getY(),
-                                            position.getPos().getZ()
-                                    },
-                                    ','
-                            ));
+                            positions.add(position.toString());
                         }
+
                         return positions.iterator();
                     }
                 });
