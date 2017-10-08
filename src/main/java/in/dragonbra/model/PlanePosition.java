@@ -3,6 +3,8 @@ package in.dragonbra.model;
 import org.apache.commons.math3.geometry.euclidean.threed.SphericalCoordinates;
 
 import java.io.Serializable;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 
 /**
  * @author lngtr
@@ -11,6 +13,12 @@ import java.io.Serializable;
 public class PlanePosition implements Serializable {
 
     public static final double R_EARTH_FEET = 20898950.1312;
+
+    private static final DecimalFormat FORMAT = new DecimalFormat("#.####");
+
+    static {
+        FORMAT.setRoundingMode(RoundingMode.HALF_UP);
+    }
 
     private SphericalCoordinates sphericalCoordinates;
 
@@ -50,7 +58,7 @@ public class PlanePosition implements Serializable {
                 timestamp + "," +
                 Math.toDegrees(sphericalCoordinates.getTheta()) + "," +
                 (Math.toDegrees(sphericalCoordinates.getPhi()) - 90) + "," +
-                (sphericalCoordinates.getR() - R_EARTH_FEET);
+                FORMAT.format(sphericalCoordinates.getR() - R_EARTH_FEET);
 
     }
 }
