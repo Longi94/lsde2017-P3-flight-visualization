@@ -1,7 +1,7 @@
 package in.dragonbra.util;
 
 import in.dragonbra.model.PlanePosition;
-import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math3.geometry.euclidean.threed.SphericalCoordinates;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.sql.Dataset;
@@ -19,15 +19,19 @@ public class SparkUtils {
         return df.map(new MapFunction<Row, PlanePosition>() {
             @Override
             public PlanePosition call(Row row) throws Exception {
-                String x = row.getString(3);
-                String y = row.getString(4);
-                String z = row.getString(5);
+                String lon = row.getString(3);
+                String lat = row.getString(4);
+                String alt = row.getString(5);
                 String timestamp = row.getString(2);
                 String isAirborne = row.getString(1);
                 String icao24 = row.getString(0);
                 //System.out.println(icao24 + " " + timestamp);
                 return new PlanePosition(
-                        new Vector3D(Double.parseDouble(x), Double.parseDouble(y), Double.parseDouble(z)),
+                        new SphericalCoordinates(
+                                Double.parseDouble(alt) + PlanePosition.R_EARTH_FEET,
+                                Math.toRadians(Double.parseDouble(lon)),
+                                Math.toRadians(Double.parseDouble(lat) + 90)
+                        ),
                         Double.parseDouble(timestamp),
                         icao24,
                         "1".equals(isAirborne)

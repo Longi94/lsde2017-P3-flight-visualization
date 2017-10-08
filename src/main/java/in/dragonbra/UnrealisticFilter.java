@@ -2,7 +2,6 @@ package in.dragonbra;
 
 import com.google.common.collect.Lists;
 import in.dragonbra.model.PlanePosition;
-import in.dragonbra.util.MathUtils;
 import in.dragonbra.util.SparkUtils;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.spark.api.java.JavaRDD;
@@ -27,7 +26,7 @@ public class UnrealisticFilter {
     private static final String INPUT_PATH = "positions";
     private static final String OUTPUT_PATH = "realistic-positions";
 
-    private static final double MAX_SPEED = 50;
+    private static final double MAX_SPEED = 10000;
 
     public static void main(String[] args) {
 
@@ -102,8 +101,8 @@ public class UnrealisticFilter {
     }
 
     private static boolean isTeleport(PlanePosition start, PlanePosition end) {
-        Vector3D v1 = MathUtils.polarToCartesian(start.getPos().getX(), start.getPos().getY(), start.getPos().getZ());
-        Vector3D v2 = MathUtils.polarToCartesian(end.getPos().getX(), end.getPos().getY(), end.getPos().getZ());
+        Vector3D v1 = start.getSphericalCoordinates().getCartesian();
+        Vector3D v2 = end.getSphericalCoordinates().getCartesian();
 
         double d = v1.distance(v2);
         double t = end.getTimestamp() - start.getTimestamp();

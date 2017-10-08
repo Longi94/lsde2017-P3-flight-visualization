@@ -99,7 +99,11 @@ public class RDPReducer {
         int end = positions.size() - 1;
 
         for (int i = 1; i < end; i++) {
-            double d = distanceFromLine(positions.get(i).getPos(), positions.get(0).getPos(), positions.get(end).getPos());
+            double d = distanceFromLine(
+                    positions.get(i).getSphericalCoordinates().getCartesian(),
+                    positions.get(0).getSphericalCoordinates().getCartesian(),
+                    positions.get(end).getSphericalCoordinates().getCartesian()
+            );
             if (d > dmax) {
                 index = i;
                 dmax = d;

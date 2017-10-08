@@ -1,6 +1,7 @@
 package in.dragonbra;
 
 import in.dragonbra.model.PlanePosition;
+import org.apache.commons.math3.geometry.euclidean.threed.SphericalCoordinates;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.junit.Test;
 
@@ -18,14 +19,14 @@ public class RDPReducerTest {
     public void douglasPeucker() throws Exception {
         List<PlanePosition> positions = new ArrayList<>();
 
-        positions.add(new PlanePosition(new Vector3D(0, 0, 0), 0, null, true));
-        positions.add(new PlanePosition(new Vector3D(1, 0, 0), 0, null, true));
-        positions.add(new PlanePosition(new Vector3D(1.5, 0, 0), 0, null, true));
-        positions.add(new PlanePosition(new Vector3D(2, 0, 0), 0, null, true));
-        positions.add(new PlanePosition(new Vector3D(2, 1, 0), 0, null, true));
-        positions.add(new PlanePosition(new Vector3D(2, 2, 0), 0, null, true));
+        positions.add(new PlanePosition(new SphericalCoordinates(new Vector3D(0, 0, 1)), 0, null, true));
+        positions.add(new PlanePosition(new SphericalCoordinates(new Vector3D(1, 0, 1)), 0, null, true));
+        positions.add(new PlanePosition(new SphericalCoordinates(new Vector3D(1.5, 0, 1)), 0, null, true));
+        positions.add(new PlanePosition(new SphericalCoordinates(new Vector3D(2, 0, 1)), 0, null, true));
+        positions.add(new PlanePosition(new SphericalCoordinates(new Vector3D(2, 1, 1)), 0, null, true));
+        positions.add(new PlanePosition(new SphericalCoordinates(new Vector3D(2, 2, 1)), 0, null, true));
 
-        List<PlanePosition> newPositions = RDPReducer.DouglasPeucker(positions, 0.01);
+        List<PlanePosition> newPositions = RDPReducer.DouglasPeucker(positions, 0.001);
 
         assertEquals(3, newPositions.size());
         assertEquals(positions.get(0), newPositions.get(0));
@@ -34,12 +35,12 @@ public class RDPReducerTest {
 
         positions.clear();
 
-        positions.add(new PlanePosition(new Vector3D(0, 0, 0), 0, null, true));
-        positions.add(new PlanePosition(new Vector3D(1, 0.001, 0), 0, null, true));
-        positions.add(new PlanePosition(new Vector3D(1.5, 0.001, 0), 0, null, true));
-        positions.add(new PlanePosition(new Vector3D(2, 0, 0), 0, null, true));
-        positions.add(new PlanePosition(new Vector3D(2, 1.001, 0), 0, null, true));
-        positions.add(new PlanePosition(new Vector3D(2, 2, 0), 0, null, true));
+        positions.add(new PlanePosition(new SphericalCoordinates(new Vector3D(0, 0, 1)), 0, null, true));
+        positions.add(new PlanePosition(new SphericalCoordinates(new Vector3D(1, 0.001, 1)), 0, null, true));
+        positions.add(new PlanePosition(new SphericalCoordinates(new Vector3D(1.5, 0.001, 1)), 0, null, true));
+        positions.add(new PlanePosition(new SphericalCoordinates(new Vector3D(2, 0, 1)), 0, null, true));
+        positions.add(new PlanePosition(new SphericalCoordinates(new Vector3D(2, 1.001, 1)), 0, null, true));
+        positions.add(new PlanePosition(new SphericalCoordinates(new Vector3D(2, 2, 1)), 0, null, true));
 
         newPositions = RDPReducer.DouglasPeucker(positions, 0.01);
 
