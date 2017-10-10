@@ -24,15 +24,11 @@ import java.util.List;
  */
 public class RDPReducer {
 
-    private static final String INPUT_PATH = "positions";
+    private static final String INPUT_PATH = "realistic-positions";
     private static final String OUTPUT_PATH = "reduced-positions";
+    private static final double EPSILON = 200.0;
 
     public static void main(String[] args) {
-
-        if (args.length < 1) {
-            System.out.println("Usage: [epsilon]");
-            System.exit(1);
-        }
 
         if (new File(OUTPUT_PATH).exists()) {
             System.out.println(OUTPUT_PATH + " already exists.");
@@ -40,8 +36,6 @@ public class RDPReducer {
         }
 
         long start = System.currentTimeMillis();
-
-        final double epsilon = Double.parseDouble(args[0]);
 
         SparkSession spark = SparkSession
                 .builder()
@@ -67,7 +61,7 @@ public class RDPReducer {
                 .mapValues(new Function<Iterable<PlanePosition>, List<PlanePosition>>() {
                     @Override
                     public List<PlanePosition> call(Iterable<PlanePosition> positionsIter) throws Exception {
-                        return DouglasPeucker(Lists.newArrayList(positionsIter), epsilon);
+                        return DouglasPeucker(Lists.newArrayList(positionsIter), EPSILON);
                     }
                 })
 
