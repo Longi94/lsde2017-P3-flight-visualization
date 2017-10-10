@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from matplotlib.path import Path
-import matplotlib.patches as patches
+from mpl_toolkits.mplot3d import Axes3D
 import sys
 import numpy as np
 import matplotlib.collections as mcoll
@@ -61,10 +61,26 @@ with open(sys.argv[1]) as input_file:
     altitudes = [float(row[5]) for row in content]
     timestamps = [float(row[2]) for row in content]
 
-plt.figure(1)
+plt.figure()
 plt.xlabel('Longitude')
 plt.ylabel('Latitude')
 plt.plot(longitudes, latitudes, 'o', markersize=0.5)
+
+# fig = plt.figure()
+# ax = fig.gca(projection='3d')
+# ax.plot(longitudes, latitudes, altitudes)
+# ax.set_xlabel('Longitude')
+# ax.set_ylabel('Latitude')
+# ax.set_zlabel('Altitude')
+
+# fig = plt.figure()
+# ax = fig.gca(projection='3d')
+# N = len(longitudes)
+# for i in range(N - 1):
+#     ax.plot(longitudes[i:i + 2], latitudes[i:i + 2], altitudes[i:i + 2], color=plt.cm.jet(int(255 * i / N)))
+# ax.set_xlabel('Longitude')
+# ax.set_ylabel('Latitude')
+# ax.set_zlabel('Altitude')
 
 codes = [Path.MOVETO] + [Path.LINETO] * (len(vertices) - 1)
 path = Path(vertices, codes)
@@ -76,7 +92,7 @@ ax.set_ylim(min(latitudes) - 1, max(latitudes) + 1)
 z = np.linspace(0, 1, len(x))
 colorline(x, y, z, cmap=plt.get_cmap('jet'), linewidth=2)
 
-plt.figure(3)
+plt.figure()
 plt.xlabel('Timestamp')
 plt.ylabel('Altitude')
 plt.plot(timestamps, altitudes, '.', markersize=0.5)
