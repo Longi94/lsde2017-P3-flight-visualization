@@ -28,11 +28,18 @@ public class PlanePosition implements Serializable {
 
     private boolean isAirborne;
 
+    private boolean end;
+
     public PlanePosition(SphericalCoordinates sphericalCoordinates, double timestamp, String icao24, boolean isAirborne) {
+        this(sphericalCoordinates, timestamp, icao24, isAirborne, false);
+    }
+
+    public PlanePosition(SphericalCoordinates sphericalCoordinates, double timestamp, String icao24, boolean isAirborne, boolean end) {
         this.sphericalCoordinates = sphericalCoordinates;
         this.timestamp = timestamp;
         this.icao24 = icao24;
         this.isAirborne = isAirborne;
+        this.end = end;
     }
 
     public SphericalCoordinates getSphericalCoordinates() {
@@ -56,9 +63,30 @@ public class PlanePosition implements Serializable {
         return icao24 + "," +
                 (isAirborne ? "1" : "0") + "," +
                 timestamp + "," +
-                Math.toDegrees(sphericalCoordinates.getTheta()) + "," +
-                (Math.toDegrees(sphericalCoordinates.getPhi()) - 90) + "," +
-                FORMAT.format(sphericalCoordinates.getR() - R_EARTH_FEET);
+                getLongitude() + "," +
+                getLatitude() + "," +
+                FORMAT.format(getAltitude()) + "," +
+                (end ? 1 : 0);
 
+    }
+
+    public boolean isEnd() {
+        return end;
+    }
+
+    public void setEnd(boolean end) {
+        this.end = end;
+    }
+
+    public double getAltitude() {
+        return sphericalCoordinates.getR() - R_EARTH_FEET;
+    }
+
+    public double getLongitude() {
+        return Math.toDegrees(sphericalCoordinates.getTheta());
+    }
+
+    public double getLatitude() {
+        return Math.toDegrees(sphericalCoordinates.getPhi()) - 90;
     }
 }
