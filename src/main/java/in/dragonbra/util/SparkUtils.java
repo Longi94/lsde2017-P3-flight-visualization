@@ -25,17 +25,32 @@ public class SparkUtils {
                 String timestamp = row.getString(2);
                 String isAirborne = row.getString(1);
                 String icao24 = row.getString(0);
-                //System.out.println(icao24 + " " + timestamp);
-                return new PlanePosition(
-                        new SphericalCoordinates(
-                                Double.parseDouble(alt) + PlanePosition.R_EARTH_FEET,
-                                Math.toRadians(Double.parseDouble(lon)),
-                                Math.toRadians(Double.parseDouble(lat) + 90)
-                        ),
-                        Double.parseDouble(timestamp),
-                        icao24,
-                        "1".equals(isAirborne)
-                );
+
+                if (row.size() > 6) {
+                    String isEnd = row.getString(6);
+                    return new PlanePosition(
+                            new SphericalCoordinates(
+                                    Double.parseDouble(alt) + PlanePosition.R_EARTH_FEET,
+                                    Math.toRadians(Double.parseDouble(lon)),
+                                    Math.toRadians(Double.parseDouble(lat) + 90)
+                            ),
+                            Double.parseDouble(timestamp),
+                            icao24,
+                            "1".equals(isAirborne),
+                            "1".equals(isEnd)
+                    );
+                } else {
+                    return new PlanePosition(
+                            new SphericalCoordinates(
+                                    Double.parseDouble(alt) + PlanePosition.R_EARTH_FEET,
+                                    Math.toRadians(Double.parseDouble(lon)),
+                                    Math.toRadians(Double.parseDouble(lat) + 90)
+                            ),
+                            Double.parseDouble(timestamp),
+                            icao24,
+                            "1".equals(isAirborne)
+                    );
+                }
             }
         }, Encoders.kryo(PlanePosition.class)).javaRDD();
     }

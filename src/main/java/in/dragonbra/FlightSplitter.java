@@ -107,8 +107,11 @@ public class FlightSplitter {
 
     private static boolean isEnd(List<PlanePosition> positions, int i) {
         boolean timeGap = positions.get(i + 1).getTimestamp() - positions.get(i).getTimestamp() > 1000;
+        boolean bigTimeGap = positions.get(i + 1).getTimestamp() - positions.get(i).getTimestamp() > 10000;
 
         if (!timeGap) return false;
+
+        if (bigTimeGap) return true;
 
         if (!positions.get(i).isAirborne()) return true;
 
