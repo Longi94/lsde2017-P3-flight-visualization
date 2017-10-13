@@ -50,6 +50,16 @@ public class UnrealisticFilter {
 
         JavaRDD<String> reducedPositions = positions
 
+                .filter(new Function<PlanePosition, Boolean>() {
+                    @Override
+                    public Boolean call(PlanePosition p) throws Exception {
+                        return p.getLongitude() > -15 &&
+                                p.getLongitude() < 25 &&
+                                p.getLatitude() > 32 &&
+                                p.getLatitude() < 66;
+                    }
+                })
+
                 // sort by timestamp (again...)
                 .sortBy(new Function<PlanePosition, Double>() {
                     @Override
