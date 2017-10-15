@@ -27,6 +27,8 @@ public class CsvToBinary {
 
     private static final String INPUT_PATH = "split-positions";
 
+    private static final double CHUNK_INTERVAL = 14400;
+
     public static void main(String[] args) throws IOException {
 
         long start = System.currentTimeMillis();
@@ -114,7 +116,7 @@ public class CsvToBinary {
         DataOutputStream flightsOut = new DataOutputStream(new FileOutputStream("flights.bin"));
         DataOutputStream timeOut = new DataOutputStream(new FileOutputStream("time-index.bin"));
 
-        double nextHour = flights.get(0).getTs()[0] - (flights.get(0).getTs()[0] % 3600);
+        double nextHour = flights.get(0).getTs()[0] - (flights.get(0).getTs()[0] % CHUNK_INTERVAL);
 
         int flightOffset = 0;
         for (Flight flight : flights) {
@@ -124,7 +126,7 @@ public class CsvToBinary {
             if (nextHour < startTs) {
                 timeOut.writeDouble(nextHour);
                 timeOut.writeInt(flightOffset);
-                nextHour = nextHour + 3600;
+                nextHour = nextHour + CHUNK_INTERVAL;
             }
 
             flightsOut.writeInt(positionsOut.size());
