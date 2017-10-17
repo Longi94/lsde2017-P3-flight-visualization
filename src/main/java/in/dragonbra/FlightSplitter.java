@@ -25,8 +25,8 @@ import static in.dragonbra.util.MathUtils.getAngle;
  */
 public class FlightSplitter {
 
-    private static final String INPUT_PATH = "reduced-positions";
-    private static final String OUTPUT_PATH = "split-positions";
+    private static final String INPUT_PATH = "spark-data/reduced-positions";
+    private static final String OUTPUT_PATH = "spark-data/split-positions";
 
     public static void main(String[] args) {
 

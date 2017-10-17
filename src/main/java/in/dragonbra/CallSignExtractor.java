@@ -29,7 +29,7 @@ import static org.opensky.libadsb.tools.toHexString;
  */
 public class CallSignExtractor {
 
-    private static final String OUTPUT_PATH = "call-signs";
+    private static final String OUTPUT_PATH = "spark-data/call-signs";
 
     public static void main(String[] args) throws IOException {
 
@@ -49,7 +49,7 @@ public class CallSignExtractor {
 
         SparkSession spark = SparkSession
                 .builder()
-                .appName(PositionExtractor.class.getSimpleName())
+                .appName(CallSignExtractor.class.getSimpleName())
                 .getOrCreate();
 
         // Creates a DataFrame from a specified file

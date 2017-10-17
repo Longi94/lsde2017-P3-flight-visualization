@@ -23,10 +23,10 @@ import java.util.List;
  */
 public class UnrealisticFilter {
 
-    private static final String INPUT_PATH = "positions";
-    private static final String OUTPUT_PATH = "realistic-positions";
+    private static final String INPUT_PATH = "spark-data/positions";
+    private static final String OUTPUT_PATH = "spark-data/realistic-positions";
 
-    private static final double MAX_SPEED = 10000;
+    private static final double MAX_SPEED = 2000;
 
     public static void main(String[] args) {
 

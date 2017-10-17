@@ -82,7 +82,4 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
-/sample-data/
-/sample-out/
-/positions/
-/reduced-positions/
+/spark-data/

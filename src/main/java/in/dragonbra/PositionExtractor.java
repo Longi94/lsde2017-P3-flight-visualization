@@ -30,7 +30,7 @@ import static org.opensky.libadsb.tools.toHexString;
 
 public class PositionExtractor {
 
-    private static final String OUTPUT_PATH = "positions";
+    private static final String OUTPUT_PATH = "spark-data/positions";
 
     public static void main(String[] args) throws IOException {
 

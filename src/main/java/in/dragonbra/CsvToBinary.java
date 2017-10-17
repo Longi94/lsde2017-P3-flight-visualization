@@ -25,7 +25,7 @@ import java.util.List;
  */
 public class CsvToBinary {
 
-    private static final String INPUT_PATH = "split-positions";
+    private static final String INPUT_PATH = "spark-data/split-positions";
 
     private static final double CHUNK_INTERVAL = 14400;
 

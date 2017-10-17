@@ -24,8 +24,8 @@ import java.util.List;
  */
 public class RDPReducer {
 
-    private static final String INPUT_PATH = "realistic-positions";
-    private static final String OUTPUT_PATH = "reduced-positions";
+    private static final String INPUT_PATH = "spark-data/realistic-positions";
+    private static final String OUTPUT_PATH = "spark-data/reduced-positions";
     private static final double EPSILON = 300.0;
 
     public static void main(String[] args) {
