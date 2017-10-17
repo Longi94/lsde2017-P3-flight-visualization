@@ -134,11 +134,6 @@ public class CallSignExtractor {
             IdentificationMsg reply = (IdentificationMsg) message.getModeSReply();
             String ident = new String(reply.getIdentity());
 
-            if (currentIdent == null) {
-                currentIdent = ident;
-                startTs = message.getTimeStamp();
-            }
-
             if (!ident.equals(currentIdent)) {
                 callSigns.add(icao24 + "," + startTs + "," + currentIdent);
                 currentIdent = ident;
