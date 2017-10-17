@@ -127,9 +127,23 @@ public class CallSignExtractor {
         // Decoding is done according to the java-adsb example
         // https://github.com/openskynetwork/java-adsb/blob/master/src/main/java/org/opensky/example/ExampleDecoder.java
 
+        String currentIdent = null;
+        double startTs = 0;
+
         for (Message message : messages) {
             IdentificationMsg reply = (IdentificationMsg) message.getModeSReply();
-            callSigns.add(icao24 + "," + message.getTimeStamp() + "," + new String(reply.getIdentity()));
+            String ident = new String(reply.getIdentity());
+
+            if (currentIdent == null) {
+                currentIdent = ident;
+                startTs = message.getTimeStamp();
+            }
+
+            if (!ident.equals(currentIdent)) {
+                callSigns.add(icao24 + "," + startTs + "," + currentIdent);
+                currentIdent = ident;
+                startTs = message.getTimeStamp();
+            }
         }
 
         return callSigns.iterator();
