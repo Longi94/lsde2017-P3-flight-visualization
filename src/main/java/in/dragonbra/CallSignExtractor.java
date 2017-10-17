@@ -132,10 +132,18 @@ public class CallSignExtractor {
 
         for (Message message : messages) {
             IdentificationMsg reply = (IdentificationMsg) message.getModeSReply();
-            String ident = new String(reply.getIdentity());
+            String ident = new String(reply.getIdentity()).trim();
+
+            if (ident.isEmpty()) continue;
+
+            if (currentIdent == null) {
+                currentIdent = ident;
+                startTs = message.getTimeStamp();
+                callSigns.add(icao24 + "," + startTs + "," + currentIdent);
+            }
 
             if (!ident.equals(currentIdent)) {
-                callSigns.add(icao24 + "," + startTs + "," + currentIdent);
+                callSigns.add(icao24 + "," + startTs + "," + ident);
                 currentIdent = ident;
                 startTs = message.getTimeStamp();
             }
