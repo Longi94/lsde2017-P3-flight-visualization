@@ -25,4 +25,6 @@ dependencies {
     compile 'com.databricks:spark-avro_2.11:3.2.0'
     compile 'org.opensky-network:libadsb:2.1.1'
     compile 'com.google.guava:guava:23.0'
+    compile 'com.google.code.gson:gson:2.8.2'
+    compile 'com.squareup.okhttp:okhttp:2.7.5'
 }
