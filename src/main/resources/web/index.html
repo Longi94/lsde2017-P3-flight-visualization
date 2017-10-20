@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Flight Visualization</title>
+
+    <script src="lib/jquery/jquery-3.2.1.min.js"></script>
+    <script src="lib/bootstrap/js/bootstrap.min.js"></script>
+    <script src="lib/bootstrap-slider/bootstrap-slider.min.js"></script>
+    <script src="lib/d3js/d3.v4.js"></script>
+    <script src="lib/d3js/topojson.v1.min.js"></script>
+    <script src="js/copyright.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="lib/bootstrap/css/bootstrap.min.css"/>
+    <link rel="stylesheet" type="text/css" href="lib/bootstrap-slider/css/bootstrap-slider.min.css"/>
+    <link rel="stylesheet" type="text/css" href="css/index.css"/>
+
+</head>
+<body>
+<div id="map"></div>
+<div id="ui">
+    <div>
+        <h2>Flight Visualization</h2>
+        <img id="small-loading" src="svg/double-ring.svg" style="display: none;"/>
+    </div>
+    <div>
+        <input id="time-slider"
+               type="text"
+               data-provide="slider"
+               data-slider-min="1474156800"
+               data-slider-max="1474761600"
+               data-slider-step="100"/>
+    </div>
+    <div>
+        <h4 id="time">Sun, 18 Sep 2016 00:00:00 GMT</h4>
+    </div>
+    <div id="button-row">
+        <button type="button" class="btn btn-danger" id="stop-button" disabled="disabled">
+            <span class="glyphicon glyphicon-stop"></span>
+        </button>
+        <button type="button" class="btn btn-success" id="start-button"><span class="glyphicon glyphicon-play"></span>
+        </button>
+    </div>
+    <div>
+        <form class="form-inline">
+            <div class="form-group">
+                <label for="speed">Speed: </label>
+                <select class="form-control" id="speed">
+                    <option value="1">1x</option>
+                    <option value="10">10x</option>
+                    <option value="20">20x</option>
+                    <option value="50">50x</option>
+                    <option value="100" selected="selected">100x</option>
+                    <option value="200">200x</option>
+                    <option value="500">500x</option>
+                    <option value="1000">1000x</option>
+                </select>
+            </div>
+        </form>
+    </div>
+    <div>
+        <form class="form-inline">
+            <div class="form-group">
+                <label for="airline">Airline: </label>
+                <select class="form-control" id="airline">
+                    <option value="">ALL</option>
+                </select>
+            </div>
+        </form>
+    </div>
+    <div id="flight-code-div" style="display: none;">
+        <form class="form-inline">
+            <div class="form-group">
+                <label for="flight-code">Flight: </label>
+                <select class="form-control" id="flight-code">
+                    <option value="">ALL</option>
+                </select>
+            </div>
+        </form>
+    </div>
+</div>
+<div id="loading-overlay">
+    <img src="svg/double-ring.svg"/>
+</div>
+<div id="copyright-div"></div>
+<script src="js/index.js"></script>
+</body>
+</html>

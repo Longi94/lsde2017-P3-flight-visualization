@@ -1,0 +1,84 @@
+body {
+    margin: 0;
+    background-color: #00244c;
+}
+
+h2, h4 {
+    color: white;
+}
+
+.countries {
+    fill: #0f1121;
+    stroke: #5c5c5c;
+    stroke-width: 0.5px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+}
+
+.plane, .plane-preview {
+    fill: #fff;
+    stroke-width: 0;
+}
+
+#ui {
+    position: fixed;
+    top: 0;
+    right: 0;
+    margin-right: 20px;
+}
+
+#ui > div {
+    width: 100%;
+    display: inline-block;
+}
+
+#ui > div > * {
+    float: right;
+}
+
+.slider.slider-horizontal {
+    width: 300px;
+}
+
+#button-row {
+    margin-top: 10px;
+}
+
+#button-row > button {
+    margin-left: 10px;
+}
+
+#loading-overlay {
+    position: fixed;
+    background-color: rgba(0, 0, 0, 0.50);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+#small-loading {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    height: 32px;
+}
+
+#copyright-div {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    color: white;
+    padding: 20px;
+}
+
+.form-group > label {
+    color: white;
+}
+
+#airline {
+    max-width: 250px;
+}
