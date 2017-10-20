@@ -1,10 +1,9 @@
 package in.dragonbra;
 
 import com.google.gson.Gson;
-import in.dragonbra.model.Airline;
-import in.dragonbra.model.CallSign;
-import in.dragonbra.model.Flight;
-import in.dragonbra.model.PlanePosition;
+import com.google.gson.GsonBuilder;
+import in.dragonbra.gson.DoubleTypeAdapter;
+import in.dragonbra.model.*;
 import in.dragonbra.service.AirlineService;
 import in.dragonbra.util.SparkUtils;
 import org.apache.commons.io.FileUtils;
@@ -25,7 +24,7 @@ import java.util.regex.Pattern;
  * @author lngtr
  * @since 2017-10-12
  */
-public class CsvToBinary {
+public class CsvToJson {
 
     private static final Pattern FILE_PATTERN = Pattern.compile("part-[0-9]{5}");
 
@@ -38,8 +37,10 @@ public class CsvToBinary {
 
         long start = System.currentTimeMillis();
 
+        // This is the service that will resolve airline names
         AirlineService airlineService = new AirlineService(args[0]);
 
+        // Read the call signs first
         Map<String, List<CallSign>> callSigns = new HashMap<>();
 
         Collection<File> files = FileUtils.listFiles(new File(CALL_SIGNS_INPUT_PATH), new IOFileFilter() {
@@ -54,7 +55,7 @@ public class CsvToBinary {
             }
         }, null);
 
-
+        // Read the call signs into a map so we can match flights with their identity
         for (File file : files) {
             try (BufferedReader br = new BufferedReader(new FileReader(file))) {
                 String line;
@@ -97,101 +98,114 @@ public class CsvToBinary {
 
                         List<Flight> flights = new LinkedList<>();
                         List<Double> ts = new ArrayList<>();
-                        List<Float> lon = new ArrayList<>();
-                        List<Float> lat = new ArrayList<>();
-                        List<Float> alt = new ArrayList<>();
+                        List<Double> lon = new ArrayList<>();
+                        List<Double> lat = new ArrayList<>();
+                        List<Double> alt = new ArrayList<>();
 
                         for (PlanePosition planePos : t._2) {
                             if (planePos.isAirborne()) {
                                 ts.add(planePos.getTimestamp());
-                                lon.add((float) planePos.getLongitude());
-                                lat.add((float) planePos.getLatitude());
-                                alt.add((float) planePos.getAltitude());
+                                lon.add(planePos.getLongitude());
+                                lat.add(planePos.getLatitude());
+                                alt.add(planePos.getAltitude());
                             }
 
                             if ((!planePos.isAirborne() || planePos.isEnd()) && !ts.isEmpty()) {
-                                flights.add(new Flight(
-                                        t._1,
-                                        ts.toArray(new Double[ts.size()]),
-                                        lon.toArray(new Float[lon.size()]),
-                                        lat.toArray(new Float[lat.size()]),
-                                        alt.toArray(new Float[alt.size()])
-                                ));
-                                ts.clear();
-                                lon.clear();
-                                lat.clear();
-                                alt.clear();
+                                flights.add(new Flight(t._1, null, ts, lon, lat, alt));
+
+                                ts = new ArrayList<>();
+                                lon = new ArrayList<>();
+                                lat = new ArrayList<>();
+                                alt = new ArrayList<>();
                             }
                         }
 
                         if (!ts.isEmpty()) {
-                            flights.add(new Flight(
-                                    t._1,
-                                    ts.toArray(new Double[ts.size()]),
-                                    lon.toArray(new Float[lon.size()]),
-                                    lat.toArray(new Float[lat.size()]),
-                                    alt.toArray(new Float[alt.size()])
-                            ));
+                            flights.add(new Flight(t._1, null, ts, lon, lat, alt));
                         }
 
                         return flights.iterator();
                     }
                 })
 
+                // sort by the start time of the flight
                 .sortBy(new Function<Flight, Double>() {
                     @Override
                     public Double call(Flight v1) throws Exception {
-                        return v1.getTs()[0];
+                        return v1.getTs().get(0);
                     }
                 }, true, positions.getNumPartitions());
 
-        List<Flight> flights = reducedPositions.collect();
+        // collect the flights for further processing, have to do it without spark
+        List<Flight> flights = new ArrayList<>(reducedPositions.collect());
 
         spark.stop();
 
-        DataOutputStream positionsOut = new DataOutputStream(new FileOutputStream("spark-data/positions.bin"));
-        DataOutputStream flightsOut = new DataOutputStream(new FileOutputStream("spark-data/flights.bin"));
-        DataOutputStream timeOut = new DataOutputStream(new FileOutputStream("spark-data/time-index.bin"));
-        ObjectOutputStream identityOut = new ObjectOutputStream(new FileOutputStream("spark-data/identities.bin"));
-
-        double nextHour = flights.get(0).getTs()[0] - (flights.get(0).getTs()[0] % CHUNK_INTERVAL);
-
         List<String> flightIdentities = new ArrayList<>();
 
-        int flightOffset = 0;
-        for (Flight flight : flights) {
+        // temporary arrays for the flight
+        List<Flight> currentFlights = new ArrayList<>();
+        List<Flight> nextFlights = new ArrayList<>();
+        List<Flight> temp;
 
-            double startTs = flight.getTs()[0];
+        // chunks are identified by timestamp
+        double currentChunk = flights.get(0).getTs().get(0) - flights.get(0).getTs().get(0) % CHUNK_INTERVAL;
 
-            if (nextHour < startTs) {
-                timeOut.writeDouble(nextHour);
-                timeOut.writeInt(flightOffset);
-                nextHour = nextHour + CHUNK_INTERVAL;
+        Iterator<Flight> iterator = flights.iterator();
+        Flight flight;
+
+        Gson gson = new GsonBuilder()
+                .excludeFieldsWithoutExposeAnnotation()
+                .registerTypeAdapter(Double.class, new DoubleTypeAdapter()).create();
+
+        while (iterator.hasNext()) {
+            flight = iterator.next();
+
+            if (flight.getTs().size() < 2) {
+                // pointless flight objects
+                iterator.remove();
+                continue;
             }
 
-            flightsOut.writeInt(positionsOut.size());
+            if (currentChunk + CHUNK_INTERVAL <= flight.getTs().get(0)) {
 
-            String identity = getIdentity(callSigns, flight.getIcao24(), flight.getTs()[0]);
+                // finished with one chunk, write the json
+                try (Writer writer = new FileWriter("spark-data/flights/" + String.format("%.0f", currentChunk) + ".json")) {
+                    gson.toJson(currentFlights, writer);
+                    writer.flush();
+                }
+
+                currentChunk += CHUNK_INTERVAL;
+
+                // If need be, further split the flights
+                temp = nextFlights;
+                currentFlights.clear();
+                nextFlights = new ArrayList<>();
+
+                for (Flight tempFlight : temp) {
+                    splitFlight(tempFlight, currentFlights, nextFlights, currentChunk);
+                }
+
+                temp.clear();
+            }
+
+            // get the identity of the flight
+            String identity = getIdentity(callSigns, flight.getIcao24(), flight.getTs().get(0));
             flightIdentities.add(identity);
+            flight.setIdentity(identity);
 
-            flightOffset++;
+            splitFlight(flight, currentFlights, nextFlights, currentChunk);
 
-            for (double ts : flight.getTs()) {
-                positionsOut.writeDouble(ts);
-            }
-            for (float lon : flight.getLon()) {
-                positionsOut.writeFloat(lon);
-            }
-            for (float lat : flight.getLat()) {
-                positionsOut.writeFloat(lat);
-            }
-            for (float alt : flight.getAlt()) {
-                positionsOut.writeFloat(alt);
-            }
+            iterator.remove();
         }
 
-        identityOut.writeObject(flightIdentities.toArray(new String[flightIdentities.size()]));
+        // write the last json too
+        try (Writer writer = new FileWriter("spark-data/flights/" + String.format("%.0f", currentChunk) + ".json")) {
+            gson.toJson(currentFlights, writer);
+            writer.flush();
+        }
 
+        // start resolving airling names and create a json with the airlines and flight idnetities
         Map<String, Airline> airlineMap = new HashMap<>();
 
         for (String identity : flightIdentities) {
@@ -218,25 +232,23 @@ public class CsvToBinary {
             }
         });
 
-        Writer writer = new FileWriter("spark-data/airlines.json");
-        new Gson().toJson(airlines, writer);
-
-        writer.flush();
-        writer.close();
-
-        identityOut.flush();
-        identityOut.close();
-
-        positionsOut.flush();
-        positionsOut.close();
-
-        flightsOut.flush();
-        flightsOut.close();
-
-        timeOut.flush();
-        timeOut.close();
+        try (Writer writer = new FileWriter("spark-data/airlines.json")) {
+            new Gson().toJson(airlines, writer);
+        }
 
         System.out.println("Finished in " + (System.currentTimeMillis() - start) + " milliseconds.");
+    }
+
+    private static void splitFlight(Flight flight, List<Flight> current, List<Flight> next, double currentChunk) {
+        double nextId = currentChunk + CHUNK_INTERVAL;
+        if (flight.getTs().get(flight.getTs().size() - 1) > nextId) {
+            // flight overlaps with other chunk, split it
+            SplitFlight sf = new SplitFlight(flight, nextId);
+            current.add(sf.getF1());
+            next.add(sf.getF2());
+        } else {
+            current.add(flight);
+        }
     }
 
     private static String getIdentity(Map<String, List<CallSign>> callSigns, String icao24, double timestamp) {
