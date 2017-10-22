@@ -3,6 +3,7 @@
 const START_TS = 1474156800;
 const END_TS = 1474761600;
 const CHUNK_INTERVAL = 14400;
+const FPS = 25;
 
 $('document').ready(function () {
     copyright("#copyright-div", 2017);
@@ -13,18 +14,28 @@ var currentWidth = $('#map').width();
 var width = 938;
 var height = 620;
 
-// is the timre running?
+// is the timer running?
 var timerRunning = false;
 
 // whether the slider is being dragged or not
 var sliding = false;
 
-// this aray cointains the flights
-var flightBuffer = [];
+// the current and the next chunk of flights
 var flightChunks = [];
 
+// flights waiting to be animated
+var flightBuffer = [];
+
+// flights currently animated
+var animBuffer = [];
+
+// airline data
+var airlines = {};
+
+// how fast the animation goes
 var speedMultiplier = 200;
 
+// flight filters
 var icaoFilter = "";
 var flightFilter = "";
 
@@ -50,6 +61,7 @@ var svg = d3.select("#map")
 // load the countries json
 $.get("json/countries.topo.json", function (countries) {
     // create svg from topojson
+    /** @namespace countries.objects.countries */
     svg.append("g")
         .attr("class", "countries")
         .selectAll("path")
@@ -61,12 +73,12 @@ $.get("json/countries.topo.json", function (countries) {
     initFlights(START_TS);
 }).fail(print);
 
-var airlines = {};
-
 // load the airlines json
 $.get("json/airlines.json", function (airlinesData) {
     var $airlineSelect = $("#airline");
     $.each(airlinesData, function (i, airline) {
+        /** @namespace airline.icao */
+        /** @namespace airline.flightIdentities */
         airlines[airline.icao] = airline.flightIdentities;
         $airlineSelect.append("<option value='" + airline.icao + "'>" + airline.name + "</option>");
     });
@@ -79,7 +91,7 @@ var timeSlider = $('#time-slider').slider({
     }
 });
 
-// timer that starts the animations, lazyloads flights, etc.
+// timer that starts the animations, lazy-loads flights, etc.
 var timer;
 
 // which timestamp did the animation start at
@@ -141,7 +153,7 @@ timeSlider.slider('on', 'slideStop', function (value) {
 
     if (timerRunning) {
         timer.stop();
-        d3.selectAll(".plane").interrupt().attr("class", "plane-preview");
+        d3.selectAll(".plane").attr("class", "plane-preview");
         initFlights(value, true);
     } else {
         $('#time').text(formatTimestamp(value));
@@ -160,7 +172,7 @@ $('#start-button').click(function () {
 $('#stop-button').click(function () {
     if (timerRunning) {
         timer.stop();
-        d3.selectAll(".plane").interrupt().attr("class", "plane-preview");
+        d3.selectAll(".plane").attr("class", "plane-preview");
         timerRunning = false;
         enableButtons();
     }
@@ -169,7 +181,7 @@ $('#stop-button').click(function () {
 function restartAnim() {
     if (timerRunning) {
         timer.stop();
-        d3.selectAll(".plane").interrupt().attr("class", "plane-preview");
+        d3.selectAll(".plane").attr("class", "plane-preview");
         startAnim(timeSlider.slider('getValue'));
     }
 }
@@ -194,7 +206,7 @@ function loadFlights(timestamp) {
 }
 
 /**
- * map the flights to a useable thing
+ * map the flights to a usable thing
  * @param flight
  * @returns {{coordinates: (Array|*), timestamps: *, altitudes: string}}
  */
@@ -264,16 +276,12 @@ function drawPreview(timestamp) {
         }
 
         // dot svg
-        var plane = svg.append("circle")
+        svg.append("circle")
             .attr("class", "plane-preview")
             .attr("r", "1")
             .attr("transform", "translate(" + coords[0] + "," + coords[1] + ") scale(" + alt / 8000.0 + ")");
     });
 }
-
-var previewsRemoved = false;
-
-var nextTimerFrame = 0;
 
 /**
  * Start the animation
@@ -285,117 +293,118 @@ function startAnim(timestamp) {
     disableButtons();
 
     flightBuffer = flightChunks[0].concat(flightChunks[1]);
+    animBuffer = [];
 
     $('.plane').remove();
     previewsRemoved = false;
     nextTimerFrame = 0;
-    timer = d3.timer(function (elapsed) {
+    timer = d3.timer(timerDelta);
+}
 
-        if (nextTimerFrame >= elapsed) {
-            return;
+/**
+ * Add flights to the anim buffer that should start animating
+ * @param timestamp
+ */
+function extendAnimationBuffer(timestamp) {
+    while (flightBuffer.length > 0 && flightBuffer[0].timestamps[0] < timestamp) {
+        if (!filterFlight(flightBuffer[0])) {
+            flightBuffer[0].plane = svg.append("circle")
+                .attr("class", "plane")
+                .attr("r", "1");
+
+            animBuffer.push(flightBuffer[0]);
         }
-        nextTimerFrame += 100;
+        flightBuffer.shift();
+    }
+}
 
-        var currentTs = animationStart + (elapsed / 1000) * speedMultiplier;
-        if (currentTs > END_TS) {
-            timer.stop();
-            timerRunning = false;
-            enableButtons();
+/**
+ * Remove flights from the anim buffer that have already ended
+ * @param timestamp
+ */
+function pruneAnimationBuffer(timestamp) {
+    animBuffer = animBuffer.filter(function (flight) {
+        if (flight.timestamps.length === 0 || flight.timestamps[flight.timestamps.length - 1] < timestamp) {
+            flight.plane.remove();
+            return false;
         }
-
-        // load the next batch
-        if (nextPoll < currentTs) {
-            nextPoll += CHUNK_INTERVAL;
-            $('#small-loading').show();
-            loadFlights(nextPoll);
-        }
-
-        // do not update to allow sliding
-        if (!sliding) {
-            timeSlider.slider('setValue', currentTs);
-        }
-
-        $('#time').text(formatTimestamp(currentTs));
-
-        // animate necessary flights
-        while (flightBuffer.length > 0 && flightBuffer[0].timestamps[0] < currentTs) {
-            fly(flightBuffer[0], currentTs);
-            flightBuffer.shift();
-        }
-
-        if (!previewsRemoved) {
-            $(".plane-preview").remove();
-            previewsRemoved = true;
-        }
+        return true;
     });
 }
 
-function fly(flight, startTs) {
-    if (filterFlight(flight)) return;
+var previewsRemoved = false;
 
-    if (startTs >= flight.timestamps[flight.timestamps.length - 1]) return;
+var nextTimerFrame = 0;
 
-    while (startTs > flight.timestamps[1]) {
-        flight.timestamps.shift();
-        flight.coordinates.shift();
-        flight.altitudes.shift();
+function timerDelta(elapsed) {
+    if (nextTimerFrame >= elapsed) {
+        return;
+    }
+    nextTimerFrame += 1000 / FPS;
+
+    var currentTs = animationStart + (elapsed / 1000) * speedMultiplier;
+    if (currentTs > END_TS) {
+        timer.stop();
+        timerRunning = false;
+        enableButtons();
     }
 
-    // dot svg
-    var plane = svg.append("circle")
-        .attr("class", "plane")
-        .attr("r", "1");
-
-    // start the transition
-    var t = flight.timestamps[flight.timestamps.length - 1] - startTs;
-    plane.transition()
-        .duration(t * 1000.0 / speedMultiplier)
-        .ease(d3.easeLinear)
-        .attrTween("transform", delta(flight, startTs))
-        .remove();
-}
-
-function filterFlight(flight) {
-    if (flightFilter && (!flight.identity || flightFilter !== flight.identity)) {
-        return true;
+    // load the next batch
+    if (nextPoll < currentTs) {
+        nextPoll += CHUNK_INTERVAL;
+        $('#small-loading').show();
+        loadFlights(nextPoll);
     }
 
-    if (icaoFilter && (!flight.identity || !flight.identity.startsWith(icaoFilter))) {
-        return true;
+    // do not update to allow sliding
+    if (!sliding) {
+        timeSlider.slider('setValue', currentTs);
     }
 
-    return false;
-}
+    $('#time').text(formatTimestamp(currentTs));
 
-function delta(flight, startTs) {
-    return function () {
-        return function (t) {
+    // animate necessary flights
+    extendAnimationBuffer(currentTs);
+    pruneAnimationBuffer(currentTs);
 
-            var ts = startTs + (flight.timestamps[flight.timestamps.length - 1] - startTs) * t;
-
-            while (ts > flight.timestamps[1] && flight.timestamps.length > 1) {
-                flight.timestamps.shift();
-                flight.coordinates.shift();
-                flight.altitudes.shift();
-            }
-
-            var alt;
-            var coords;
-            if (flight.timestamps.length === 1) {
-                alt = flight.altitudes[0];
-                coords = flight.coordinates[0];
-            } else {
-                var step = (ts - flight.timestamps[0]) / (flight.timestamps[1] - flight.timestamps[0]);
-                alt = flight.altitudes[0] + step * (flight.altitudes[1] - flight.altitudes[0]);
-
-                var lon = flight.coordinates[0][0] + step * (flight.coordinates[1][0] - flight.coordinates[0][0]);
-                var lat = flight.coordinates[0][1] + step * (flight.coordinates[1][1] - flight.coordinates[0][1]);
-                coords = [lon, lat];
-            }
-
-            return "translate(" + coords[0] + "," + coords[1] + ") scale(" + alt / 8000.0 + ")";
+    $.each(animBuffer, function (i, flight) {
+        while (currentTs > flight.timestamps[1] && flight.timestamps.length > 1) {
+            flight.timestamps.shift();
+            flight.coordinates.shift();
+            flight.altitudes.shift();
         }
+
+        var alt;
+        var coords;
+        if (flight.timestamps.length === 1) {
+            alt = flight.altitudes[0];
+            coords = flight.coordinates[0];
+        } else {
+            var step = (currentTs - flight.timestamps[0]) / (flight.timestamps[1] - flight.timestamps[0]);
+            alt = flight.altitudes[0] + step * (flight.altitudes[1] - flight.altitudes[0]);
+
+            var lon = flight.coordinates[0][0] + step * (flight.coordinates[1][0] - flight.coordinates[0][0]);
+            var lat = flight.coordinates[0][1] + step * (flight.coordinates[1][1] - flight.coordinates[0][1]);
+            coords = [lon, lat];
+        }
+
+        flight.plane.attr("transform", "translate(" + coords[0] + "," + coords[1] + ") scale(" + alt / 8000.0 + ")");
+    });
+
+    if (!previewsRemoved) {
+        $(".plane-preview").remove();
+        previewsRemoved = true;
     }
+}
+
+/**
+ * True if the flight should be filtered out.
+ * @param flight
+ * @returns {boolean}
+ */
+function filterFlight(flight) {
+    return (flightFilter && (!flight.identity || flightFilter !== flight.identity)) ||
+        (icaoFilter && (!flight.identity || !flight.identity.startsWith(icaoFilter)));
 }
 
 function formatTimestamp(timestamp) {
@@ -416,6 +425,7 @@ function disableButtons() {
     $("#stop-button").removeAttr("disabled");
 }
 
+// convenience
 function print(o) {
     console.log(o);
 }
