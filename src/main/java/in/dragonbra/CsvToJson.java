@@ -139,6 +139,8 @@ public class CsvToJson {
         // collect the flights for further processing, have to do it without spark
         List<Flight> flights = new ArrayList<>(reducedPositions.collect());
 
+        System.out.println("Total number of flights " + flights.size());
+
         spark.stop();
 
         List<String> flightIdentities = new ArrayList<>();
@@ -173,6 +175,8 @@ public class CsvToJson {
                 try (Writer writer = new FileWriter("spark-data/flights/" + String.format("%.0f", currentChunk) + ".json")) {
                     gson.toJson(currentFlights, writer);
                     writer.flush();
+
+                    System.out.println("Number of flights in chunk " + String.format("%.0f", currentChunk) + "  " + currentFlights.size());
                 }
 
                 currentChunk += CHUNK_INTERVAL;
@@ -203,13 +207,17 @@ public class CsvToJson {
         try (Writer writer = new FileWriter("spark-data/flights/" + String.format("%.0f", currentChunk) + ".json")) {
             gson.toJson(currentFlights, writer);
             writer.flush();
+
+            System.out.println("Number of flights in chunk " + String.format("%.0f", currentChunk) + "  " + currentFlights.size());
         }
 
         // start resolving airling names and create a json with the airlines and flight idnetities
         Map<String, Airline> airlineMap = new HashMap<>();
+        int nullCount = 0;
 
         for (String identity : flightIdentities) {
             if (identity == null || identity.length() < 6 || identity.length() > 7) {
+                nullCount++;
                 continue;
             }
             String icao = identity.substring(0, 3);
@@ -220,8 +228,15 @@ public class CsvToJson {
                     airlineMap.put(icao, new Airline(icao, airlineName));
                 }
                 airlineMap.get(icao).getFlightIdentities().add(identity);
+            } else {
+                nullCount++;
             }
         }
+
+        for (Map.Entry<String, Airline> entry : airlineMap.entrySet()){
+            System.out.println(entry.getKey() + "\t" + entry.getValue().getName() + "\t" + entry.getValue().getFlightIdentities().size());
+        }
+        System.out.println("Unidentified flights " + nullCount);
 
         List<Airline> airlines = new ArrayList<>();
         airlines.addAll(airlineMap.values());

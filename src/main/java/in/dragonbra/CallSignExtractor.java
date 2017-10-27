@@ -106,11 +106,11 @@ public class CallSignExtractor {
                     }
                 })
 
-                // Decode the positions from the messages
+                // Decode the identifiers
                 .flatMap(new FlatMapFunction<Tuple2<String, Iterable<Message>>, String>() {
                     @Override
                     public Iterator<String> call(Tuple2<String, Iterable<Message>> t) throws Exception {
-                        return decodePositions(t._1, t._2);
+                        return decodeIdentifiers(t._1, t._2);
                     }
                 });
 
@@ -121,7 +121,7 @@ public class CallSignExtractor {
         System.out.println("Finished in " + (System.currentTimeMillis() - start) + " milliseconds.");
     }
 
-    private static Iterator<String> decodePositions(String icao24, Iterable<Message> messages) {
+    private static Iterator<String> decodeIdentifiers(String icao24, Iterable<Message> messages) {
         List<String> callSigns = new LinkedList<>();
 
         // Decoding is done according to the java-adsb example

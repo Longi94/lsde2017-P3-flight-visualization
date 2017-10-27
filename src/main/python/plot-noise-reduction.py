@@ -4,7 +4,6 @@ from mpl_toolkits.mplot3d import Axes3D
 import sys
 import numpy as np
 import matplotlib.collections as mcoll
-from itertools import groupby
 
 
 # source: https://stackoverflow.com/a/25941474
@@ -51,34 +50,29 @@ def make_segments(x, y):
     return segments
 
 
+with open(sys.argv[2]) as input_file:
+    content = input_file.readlines()
+    content = [x.strip().split(',') for x in content]
+    content = sorted(content, key=lambda x: x[2])
+
+    longitudes = [float(row[3]) for row in content]
+    latitudes = [float(row[4]) for row in content]
+
+plt.figure()
+plt.xlabel('Longitude')
+plt.ylabel('Latitude')
+plt.plot(longitudes, latitudes, '-', markersize=0.25, color='r')
+
 with open(sys.argv[1]) as input_file:
     content = input_file.readlines()
     content = [x.strip().split(',') for x in content]
     content = sorted(content, key=lambda x: x[2])
 
-not_ends = list(filter(lambda x: x[6] == '0', content))
-ends = list(filter(lambda x: x[6] == '1', content))
-surface_pos = list(filter(lambda x: x[1] == '0', content))
+    longitudes = [float(row[3]) for row in content]
+    latitudes = [float(row[4]) for row in content]
 
-output = [[]]
-for i, val in enumerate(content):
-    if val[6] == '1' and i == len(content) - 1:
-        break
-    output[-1].append(val)
-    if val[6] == '1':
-        output.append([])
-
-plt.figure()
 plt.xlabel('Longitude')
 plt.ylabel('Latitude')
-plt.plot([float(row[3]) for row in not_ends], [float(row[4]) for row in not_ends], 'o', markersize=1)
-plt.plot([float(row[3]) for row in ends], [float(row[4]) for row in ends], 'ro', markersize=3)
-
-plt.figure()
-plt.xlabel('Timestamp')
-plt.ylabel('Altitude')
-for i, flight in enumerate(output):
-    plt.plot([float(row[2]) for row in flight], [float(row[5]) for row in flight], '-')
-plt.plot([float(row[2]) for row in ends], [float(row[5]) for row in ends], 'ro', markersize=3)
+plt.plot(longitudes, latitudes, '-', markersize=0.5)
 
 plt.show()
