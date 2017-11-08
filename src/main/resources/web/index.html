@@ -8,7 +8,8 @@
             integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
             crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
-            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+            crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/9.9.0/bootstrap-slider.min.js"></script>
     <script src="https://d3js.org/d3-selection.v1.min.js"></script>
     <script src="https://d3js.org/d3-array.v1.min.js"></script>
@@ -20,13 +21,20 @@
 
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
           integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/9.9.0/css/bootstrap-slider.min.css"/>
+    <link rel="stylesheet" type="text/css"
+          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/9.9.0/css/bootstrap-slider.min.css"/>
     <link rel="stylesheet" type="text/css" href="css/index.css"/>
 
 </head>
 <body>
 <div id="map"></div>
 <div id="ui">
+    <a href="https://github.com/Longi94/lsde2017-P3-flight-visualization">
+        <img style="position: absolute; top: 0; left: 0; border: 0;"
+             src="https://camo.githubusercontent.com/c6286ade715e9bea433b4705870de482a654f78a/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f6c6566745f77686974655f6666666666662e706e67"
+             alt="Fork me on GitHub"
+             data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_left_white_ffffff.png">
+    </a>
     <div>
         <h2>Flight Visualization</h2>
         <img id="small-loading" src="svg/double-ring.svg" style="display: none;"/>
@@ -47,6 +55,8 @@
             <span class="glyphicon glyphicon-stop"></span>
         </button>
         <button type="button" class="btn btn-success" id="start-button"><span class="glyphicon glyphicon-play"></span>
+        </button>
+        <button type="button" class="btn btn-primary" id="info-button" data-toggle="modal" data-target="#info-modal"><span class="glyphicon glyphicon-info-sign"></span>
         </button>
     </div>
     <div>
@@ -92,5 +102,22 @@
 </div>
 <div id="copyright-div"></div>
 <script src="js/index.js"></script>
+<div id="info-modal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title" style="color: black;">Flight Visualization</h4>
+            </div>
+            <div class="modal-body">
+                <p>This project was carried out by Long Tran (me) as a Big Data project for the Large Scale Engineering course at Vrije Universiteit Amsterdam.</p>
+                <p>Visit the <a target="_blank" href="https://github.com/Longi94/lsde2017-P3-flight-visualization">Github repository</a> for more information.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
