@@ -1,7 +1,8 @@
 'use strict';
 
-const START_TS = 1474156800;
-const END_TS = 1474761600;
+const OFFSET_TS = 1474156800;
+const START_TS = 0;
+const END_TS = 604800;
 const CHUNK_INTERVAL = 14400;
 const FPS = 25;
 
@@ -154,17 +155,17 @@ timeSlider.slider('on', 'slideStop', function (value) {
     if (timerRunning) {
         timer.stop();
         d3.selectAll(".plane").attr("class", "plane-preview");
-        initFlights(value, true);
+        initFlights(value - OFFSET_TS, true);
     } else {
         $('#time').text(formatTimestamp(value));
-        initFlights(value, false);
+        initFlights(value - OFFSET_TS, false);
     }
 });
 
 // start the animation if not started
 $('#start-button').click(function () {
     if (!timerRunning) {
-        startAnim(timeSlider.slider('getValue'));
+        startAnim(timeSlider.slider('getValue') - OFFSET_TS);
     }
 });
 
@@ -182,7 +183,7 @@ function restartAnim() {
     if (timerRunning) {
         timer.stop();
         d3.selectAll(".plane").attr("class", "plane-preview");
-        startAnim(timeSlider.slider('getValue'));
+        startAnim(timeSlider.slider('getValue') - OFFSET_TS);
     }
 }
 
@@ -358,10 +359,10 @@ function timerDelta(elapsed) {
 
     // do not update to allow sliding
     if (!sliding) {
-        timeSlider.slider('setValue', currentTs);
+        timeSlider.slider('setValue', currentTs + OFFSET_TS);
     }
 
-    $('#time').text(formatTimestamp(currentTs));
+    $('#time').text(formatTimestamp(currentTs + OFFSET_TS));
 
     // animate necessary flights
     extendAnimationBuffer(currentTs);

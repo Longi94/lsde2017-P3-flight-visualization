@@ -32,6 +32,7 @@ public class CsvToJson {
     private static final String CALL_SIGNS_INPUT_PATH = "spark-data/call-signs";
 
     private static final double CHUNK_INTERVAL = 14400;
+    private static final double START_TS = 1474156800;
 
     public static void main(String[] args) throws IOException {
 
@@ -104,7 +105,7 @@ public class CsvToJson {
 
                         for (PlanePosition planePos : t._2) {
                             if (planePos.isAirborne()) {
-                                ts.add(planePos.getTimestamp());
+                                ts.add(planePos.getTimestamp() - START_TS);
                                 lon.add(planePos.getLongitude());
                                 lat.add(planePos.getLatitude());
                                 alt.add(planePos.getAltitude());
@@ -211,7 +212,7 @@ public class CsvToJson {
             System.out.println("Number of flights in chunk " + String.format("%.0f", currentChunk) + "  " + currentFlights.size());
         }
 
-        // start resolving airling names and create a json with the airlines and flight idnetities
+        // start resolving airline names and create a json with the airlines and flight identities
         Map<String, Airline> airlineMap = new HashMap<>();
         int nullCount = 0;
 

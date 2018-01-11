@@ -13,7 +13,7 @@ import java.text.DecimalFormat;
  * @since 2017-10-20
  */
 public class DoubleTypeAdapter extends TypeAdapter<Double> {
-    private static final DecimalFormat FORMAT = new DecimalFormat("###.#####");
+    private static final DecimalFormat FORMAT = new DecimalFormat("###.##");
 
     static {
         FORMAT.setRoundingMode(RoundingMode.HALF_UP);
