@@ -130,7 +130,7 @@ $("#airline").change(function () {
         $("#flight-code-div").hide();
     }
     if (!timerRunning) {
-        drawPreview(timeSlider.slider('getValue'));
+        drawPreview(timeSlider.slider('getValue') - OFFSET_TS);
     }
     restartAnim();
 });
@@ -138,7 +138,7 @@ $("#airline").change(function () {
 $("#flight-code").change(function () {
     flightFilter = $(this).val();
     if (!timerRunning) {
-        drawPreview(timeSlider.slider('getValue'));
+        drawPreview(timeSlider.slider('getValue') - OFFSET_TS);
     }
     restartAnim();
 });
