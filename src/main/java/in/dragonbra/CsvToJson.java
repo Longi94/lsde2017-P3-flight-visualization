@@ -195,7 +195,7 @@ public class CsvToJson {
             }
 
             // get the identity of the flight
-            String identity = getIdentity(callSigns, flight.getIcao24(), flight.getTs().get(0));
+            String identity = getIdentity(callSigns, flight.getIcao24(), flight.getTs().get(0) + START_TS);
             flightIdentities.add(identity);
             flight.setIdentity(identity);
 
@@ -255,7 +255,7 @@ public class CsvToJson {
         System.out.println("Finished in " + (System.currentTimeMillis() - start) + " milliseconds.");
     }
 
-    private static void splitFlight(Flight flight, List<Flight> current, List<Flight> next, double currentChunk) {
+    public static void splitFlight(Flight flight, List<Flight> current, List<Flight> next, double currentChunk) {
         double nextId = currentChunk + CHUNK_INTERVAL;
         if (flight.getTs().get(flight.getTs().size() - 1) > nextId) {
             // flight overlaps with other chunk, split it
@@ -267,7 +267,7 @@ public class CsvToJson {
         }
     }
 
-    private static String getIdentity(Map<String, List<CallSign>> callSigns, String icao24, double timestamp) {
+    public static String getIdentity(Map<String, List<CallSign>> callSigns, String icao24, double timestamp) {
         List<CallSign> identities = callSigns.get(icao24);
 
         if (identities == null) {

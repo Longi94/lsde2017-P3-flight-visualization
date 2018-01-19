@@ -187,39 +187,53 @@ function restartAnim() {
     }
 }
 
+function flightsFbToFlights(result) {
+    var data = new Uint8Array(result);
+    var buf = new flatbuffers.ByteBuffer(data);
+    var flightsFb = FlightsFb.getRootAsFlightsFb(buf);
+
+    var flights = [];
+
+    for (var i = 0; i < flightsFb.flightsLength(); i++) {
+        var flightFb = flightsFb.flights(i);
+
+        var coordinates = [];
+        var altitudes = [];
+        var timestamps = [];
+        var identity = flightFb.identity();
+
+        for (var j = 0; j < flightFb.timestampsLength(); j++) {
+            timestamps.push(flightFb.timestamps(j));
+            altitudes.push(flightFb.altitudes(j));
+            coordinates.push(projection([flightFb.longitudes(j), flightFb.latitudes(j)]));
+        }
+
+        flights.push({
+            coordinates: coordinates,
+            timestamps: timestamps,
+            altitudes: altitudes,
+            identity: identity
+        });
+    }
+
+    return flights;
+}
+
 /**
  * load the flights from the server
  * @param timestamp
  */
 function loadFlights(timestamp) {
     timestamp = timestamp - timestamp % CHUNK_INTERVAL;
-    $.get(
-        'json/flights/' + timestamp + '.json',
-        function (flights) {
-            flightChunks[0] = flightChunks[1];
-            flightChunks[1] = flights.map(flightMapper);
+    downloadBinary('bin/flights/' + timestamp + '.bin', function (flights) {
+        flightChunks[0] = flightChunks[1];
 
-            flightBuffer = flightBuffer.concat(flightChunks[1]);
+        flightChunks[1] = flightsFbToFlights(flights);
 
-            $('#small-loading').hide();
-        }
-    ).fail(print);
-}
+        flightBuffer = flightBuffer.concat(flightChunks[1]);
 
-/**
- * map the flights to a usable thing
- * @param flight
- * @returns {{coordinates: (Array|*), timestamps: *, altitudes: string}}
- */
-function flightMapper(flight) {
-    return {
-        coordinates: flight.x.map(function (lon, i) {
-            return projection([lon, flight.y[i]]);
-        }),
-        timestamps: flight.t,
-        altitudes: flight.z,
-        identity: flight.c
-    }
+        $('#small-loading').hide();
+    });
 }
 
 function initFlights(timestamp, start) {
@@ -227,23 +241,24 @@ function initFlights(timestamp, start) {
 
     var jsonTs = timestamp - timestamp % CHUNK_INTERVAL;
     flightChunks = [];
-    $.get('json/flights/' + jsonTs + '.json', function (flights) {
-        $.get('json/flights/' + (jsonTs + CHUNK_INTERVAL) + '.json', function (nextFlights) {
-            flightChunks.push(nextFlights.map(flightMapper));
+
+    downloadBinary('bin/flights/' + jsonTs + '.bin', function (flights) {
+        downloadBinary('bin/flights/' + (jsonTs + CHUNK_INTERVAL) + '.bin', function (nextFlights) {
+            flightChunks.push(flightsFbToFlights(nextFlights));
 
             $('#loading-overlay').hide();
 
             if (start) {
                 startAnim(timestamp);
             }
-        }).fail(print);
+        });
 
-        flightChunks.push(flights.map(flightMapper));
+        flightChunks.push(flightsFbToFlights(flights));
 
         nextPoll = timestamp + CHUNK_INTERVAL - (timestamp % CHUNK_INTERVAL);
 
         drawPreview(timestamp);
-    }).fail(print);
+    });
 }
 
 function drawPreview(timestamp) {
@@ -429,4 +444,20 @@ function disableButtons() {
 // convenience
 function print(o) {
     console.log(o);
+}
+
+function downloadBinary(url, handleResult) {
+    var xhttp = new XMLHttpRequest();
+    xhttp.open("GET", url, true);
+    xhttp.responseType = "arraybuffer";
+
+    xhttp.onload = function (event) {
+        handleResult(xhttp.response);
+    };
+
+    xhttp.onerror = function () {
+        console.error('GET ' + url + xhttp.status);
+    };
+
+    xhttp.send();
 }

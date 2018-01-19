@@ -1,0 +1,13 @@
+table FlightFb {
+  timestamps:[double];
+  longitudes:[float];
+  latitudes:[float];
+  altitudes:[float];
+  identity:string;
+}
+
+table FlightsFb {
+  flights:[FlightFb];
+}
+
+root_type FlightsFb;
