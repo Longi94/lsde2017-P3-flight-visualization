@@ -10,7 +10,7 @@ Generate an interactive flight path animation (GIF?) of all flights based on the
 
 ## Paper
 
-The documenting paper is available [here](https://event.cwi.nl/lsde/2017/results/group06.pdf).
+The documenting paper is available [here](https://event.cwi.nl/lsde/2017/results/group06.pdf). Since the submission of the project I have switched from JSON to flatbuffers to make loading even faster. Naturally, this change is not documented in the paper.
 
 ## Build
 
