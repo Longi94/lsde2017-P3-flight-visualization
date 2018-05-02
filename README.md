@@ -10,7 +10,7 @@ Generate an interactive flight path animation (GIF?) of all flights based on the
 
 ## Paper
 
-The link to the documenting paper will be placed here soon.
+The documenting paper is available [here](https://event.cwi.nl/lsde/2017/results/group06.pdf).
 
 ## Build
 
